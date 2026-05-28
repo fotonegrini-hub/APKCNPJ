@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>APK Cliente PRO - DN | Gestão de Clientes</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            background: #f5f5f5;
+            color: #222;
+        }
+
+        header {
+            background: #111827;
+            color: white;
+            padding: 15px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+
+        .topo {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .logo {
+            font-size: 22px;
+            font-weight: bold;
+        }
+
+        .pesquisa-cnpj {
+            display: flex;
+            gap: 8px;
+            flex: 1;
+            min-width: 250px;
+        }
+
+        .pesquisa-cnpj input {
+            flex: 1;
+            padding: 12px;
+            border-radius: 10px;
+            border: none;
+            outline: none;
+        }
+
+        .pesquisa-cnpj button {
+            padding: 12px 18px;
+            border: none;
+            border-radius: 10px;
+            background: #10b981;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .container {
+            padding: 15px;
+            max-width: 1200px;
+            margin: auto;
+        }
+
+        .acoes {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .acoes button, .acoes input {
+            padding: 12px;
+            border-radius: 10px;
+            border: 1px solid #ccc;
+        }
+
+        .btn-add {
+            background: #2563eb;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .clientes {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 15px;
+        }
+
+        .card {
+            background: white;
+            padding: 18px;
+            border-radius: 16px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        }
+
+        .card h3 {
+            margin-bottom: 10px;
+            color: #111827;
+        }
+
+        .card p {
+            margin: 6px 0;
+            font-size: 14px;
+        }
+
+        .valor-devendo {
+            color: #dc2626;
+            font-weight: bold;
+        }
+
+        .copiavel {
+            background: #f3f4f6;
+            padding: 8px 10px;
+            border-radius: 8px;
+            user-select: all;
+            cursor: pointer;
+            font-weight: bold;
+            color: #111827;
+            border: 1px dashed #9ca3af;
+            margin-bottom: 8px;
+            transition: 0.2s;
+        }
+
+        .copiavel:active {
+            background: #e5e7eb;
+        }
+
+        .salvo-info {
+            margin-top: 8px;
+            font-size: 12px;
+            color: #10b981;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            align-items: center;
+            justify-content: center;
+            padding: 15px;
+            z-index: 20;
+        }
+
+        .modal-content {
+            background: white;
+            width: 100%;
+            max-width: 450px;
+            padding: 20px;
+            border-radius: 18px;
+        }
+
+        .modal-content h2 {
+            margin-bottom: 15px;
+        }
+
+        .modal-content input {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 12px;
+            border-radius: 10px;
+            border: 1px solid #ccc;
+        }
+
+        .salvar {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 12px;
+            background: #10b981;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .btn-pequeno {
+            background: #ef4444;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            padding: 8px 12px;
+            margin-top: 12px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: bold;
+            width: 100%;
+        }
+
+        .btn-pequeno:hover {
+            opacity: 0.9;
+        }
+
+        @media(max-width: 700px){
+            .topo {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .logo {
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="topo">
+        <div class="logo">📋 APK Cliente PRO - DN</div>
+        <div class="pesquisa-cnpj">
+            <input type="text" id="cnpjBusca" placeholder="Pesquisar CNPJ (abrirá Receita)" />
+            <button onclick="buscarCNPJ()">🔍 Buscar</button>
+        </div>
+    </div>
+</header>
+
+<div class="container">
+    <div class="acoes">
+        <button class="btn-add" onclick="abrirModal()">+ Adicionar Cliente</button>
+        <input type="text" id="buscaRapida" placeholder="🔎 Buscar cliente por nome, doc ou telefone..." onkeyup="filtrarClientes()" />
+    </div>
+
+    <div class="clientes" id="listaClientes">
+        <!-- Exemplo demonstrativo (será substituído ao carregar do localStorage) -->
+        <div class="card">
+            <h3>Cliente Exemplo</h3>
+            <p><strong>CNPJ/CPF:</strong></p>
+            <div class="copiavel" onclick="copiarDocumento('00.000.000/0001-00')">00.000.000/0001-00</div>
+            <p><strong>Telefone:</strong> (14) 99999-9999</p>
+            <p class="valor-devendo"><strong>Valor Devido:</strong></p>
+            <input type="number" step="0.01" value="0" style="width:100%;padding:10px;border-radius:10px;border:1px solid #ccc;margin-top:6px;" onchange="atualizarValor(this)" data-field="valor" />
+            <p style="margin-top:10px;"><strong>Última Atualização:</strong></p>
+            <input type="date" value="2026-05-28" style="margin-top:6px;padding:10px;width:100%;border-radius:10px;border:1px solid #ccc;" onchange="salvarLocal()" data-field="data" />
+            <div class="salvo-info">✔ Dados salvos automaticamente</div>
+            <button class="btn-pequeno" onclick="removerCard(this)">🗑️ Remover Cliente</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal -->
+<div id="modalCliente" class="modal">
+    <div class="modal-content">
+        <h2>📌 Cadastrar Cliente</h2>
+        <input type="text" id="nomeCliente" placeholder="Nome do Cliente *" />
+        <input type="text" id="documentoCliente" placeholder="CPF ou CNPJ *" />
+        <input type="text" id="telefoneCliente" placeholder="Telefone *" />
+        <input type="number" step="0.01" id="valorCliente" placeholder="Valor Devido R$" />
+        <input type="date" id="dataCliente" />
+        <button class="salvar" onclick="salvarCliente()">✅ Salvar Cliente</button>
+    </div>
+</div>
+
+<script>
+    const modal = document.getElementById('modalCliente');
+    const listaClientes = document.getElementById('listaClientes');
+
+    function abrirModal() {
+        modal.style.display = 'flex';
+    }
+
+    window.onclick = function(e) {
+        if (e.target === modal) {
+            modal.style.display = 'none';
+        }
+    }
+
+    // Função principal para salvar novo cliente
+    function salvarCliente() {
+        const nome = document.getElementById('nomeCliente').value.trim();
+        const documento = document.getElementById('documentoCliente').value.trim();
+        const telefone = document.getElementById('telefoneCliente').value.trim();
+        let valor = document.getElementById('valorCliente').value;
+        let data = document.getElementById('dataCliente').value;
+
+        if (nome === '' || documento === '' || telefone === '') {
+            alert('❌ Preencha todos os campos obrigatórios: Nome, Documento e Telefone');
+            return;
+        }
+
+        if (valor === '') valor = '0';
+        const dataAtual = new Date().toISOString().slice(0,10);
+        if (data === '') data = dataAtual;
+
+        const card = document.createElement('div');
+        card.classList.add('card');
+        // Montagem com campos editáveis e botão remover
+        card.innerHTML = `
+            <h3>${escapeHTML(nome)}</h3>
+            <p><strong>CNPJ/CPF:</strong></p>
+            <div class="copiavel" onclick="copiarDocumento('${escapeHTML(documento)}')">${escapeHTML(documento)}</div>
+            <p><strong>Telefone:</strong> ${escapeHTML(telefone)}</p>
+            <p class="valor-devendo"><strong>Valor Devido:</strong></p>
+            <input type="number" step="0.01" value="${parseFloat(valor).toFixed(2)}" style="width:100%;padding:10px;border-radius:10px;border:1px solid #ccc;margin-top:6px;" onchange="atualizarValor(this)" data-field="valor" />
+            <p style="margin-top:10px;"><strong>Última Atualização:</strong></p>
+            <input type="date" value="${data}" style="margin-top:6px;padding:10px;width:100%;border-radius:10px;border:1px solid #ccc;" onchange="salvarLocal()" data-field="data" />
+            <div class="salvo-info">✔ Dados salvos automaticamente celular e desktop</div>
+            <button class="btn-pequeno" onclick="removerCard(this)">🗑️ Remover Cliente</button>
+        `;
+
+        listaClientes.appendChild(card);
+        salvarLocal();
+        // Limpar campos
+        document.getElementById('nomeCliente').value = '';
+        document.getElementById('documentoCliente').value = '';
+        document.getElementById('telefoneCliente').value = '';
+        document.getElementById('valorCliente').value = '';
+        document.getElementById('dataCliente').value = '';
+        modal.style.display = 'none';
+        alert('✅ Cliente cadastrado com sucesso!');
+    }
+
+    // Função para atualizar valor e disparar salvamento
+    function atualizarValor(input) {
+        salvarLocal();
+    }
+
+    // Remover cliente
+    function removerCard(botao) {
+        if (confirm('Remover este cliente permanentemente?')) {
+            const card = botao.closest('.card');
+            card.remove();
+            salvarLocal();
+        }
+    }
+
+    // Filtro busca rápida
+    function filtrarClientes() {
+        const filtro = document.getElementById('buscaRapida').value.toLowerCase();
+        const cards = document.querySelectorAll('#listaClientes .card');
+        cards.forEach(card => {
+            const texto = card.innerText.toLowerCase();
+            card.style.display = texto.includes(filtro) ? 'block' : 'none';
+        });
+    }
+
+    // Copiar documento
+    function copiarDocumento(doc) {
+        navigator.clipboard.writeText(doc).then(() => {
+            alert('📋 Documento copiado: ' + doc);
+        }).catch(() => {
+            alert('⚠️ Não foi possível copiar');
+        });
+    }
+
+    // Salvar todos os dados no localStorage (preserva valores dos inputs)
+    function salvarLocal() {
+        const cards = document.querySelectorAll('#listaClientes .card');
+        const dadosParaSalvar = [];
+
+        cards.forEach(card => {
+            // Extrair nome, documento, telefone, valor devido, data
+            const nome = card.querySelector('h3')?.innerText || '';
+            const documentoDiv = card.querySelector('.copiavel');
+            const documento = documentoDiv ? documentoDiv.innerText : '';
+            const telefoneStrong = card.querySelector('p:nth-of-type(3)'); // seletor relativo
+            let telefone = '';
+            // Melhor buscar: o texto após "Telefone:"
+            const telefoneTexto = card.innerText.match(/Telefone:\s*(.+?)(?:\n|Valor|$)/);
+            if (telefoneTexto) telefone = telefoneTexto[1].trim();
+            else telefone = '';
+
+            const valorInput = card.querySelector('input[data-field="valor"]');
+            const valor = valorInput ? valorInput.value : '0';
+            const dataInput = card.querySelector('input[data-field="data"]');
+            const data = dataInput ? dataInput.value : '';
+
+            dadosParaSalvar.push({
+                nome: nome,
+                documento: documento,
+                telefone: telefone,
+                valor: valor,
+                data: data
+            });
+        });
+
+        localStorage.setItem('clientesDN_PRO', JSON.stringify(dadosParaSalvar));
+        // Pequeno feedback visual (opcional)
+        const infos = document.querySelectorAll('.salvo-info');
+        infos.forEach(info => {
+            info.style.opacity = '0.7';
+            setTimeout(() => { info.style.opacity = '1'; }, 200);
+        });
+    }
+
+    // Carregar dados do localStorage
+    function carregarLocal() {
+        const dadosRaw = localStorage.getItem('clientesDN_PRO');
+        if (!dadosRaw) return;
+
+        const clientes = JSON.parse(dadosRaw);
+        if (!clientes.length) return;
+
+        // Limpa lista atual mantendo apenas se não houver dados? Vamos substituir completamente
+        listaClientes.innerHTML = '';
+
+        clientes.forEach(cli => {
+            const card = document.createElement('div');
+            card.classList.add('card');
+            card.innerHTML = `
+                <h3>${escapeHTML(cli.nome)}</h3>
+                <p><strong>CNPJ/CPF:</strong></p>
+                <div class="copiavel" onclick="copiarDocumento('${escapeHTML(cli.documento)}')">${escapeHTML(cli.documento)}</div>
+                <p><strong>Telefone:</strong> ${escapeHTML(cli.telefone)}</p>
+                <p class="valor-devendo"><strong>Valor Devido:</strong></p>
+                <input type="number" step="0.01" value="${parseFloat(cli.valor).toFixed(2)}" style="width:100%;padding:10px;border-radius:10px;border:1px solid #ccc;margin-top:6px;" onchange="atualizarValor(this)" data-field="valor" />
+                <p style="margin-top:10px;"><strong>Última Atualização:</strong></p>
+                <input type="date" value="${cli.data}" style="margin-top:6px;padding:10px;width:100%;border-radius:10px;border:1px solid #ccc;" onchange="salvarLocal()" data-field="data" />
+                <div class="salvo-info">✔ Dados salvos automaticamente celular e desktop</div>
+                <button class="btn-pequeno" onclick="removerCard(this)">🗑️ Remover Cliente</button>
+            `;
+            listaClientes.appendChild(card);
+        });
+    }
+
+    // Função para escapar HTML básico (evitar XSS leve)
+    function escapeHTML(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        }).replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, function(c) {
+            return c;
+        });
+    }
+
+    // Função buscar CNPJ - abre site da Receita
+    function buscarCNPJ() {
+        let cnpj = document.getElementById('cnpjBusca').value.trim();
+        if (cnpj === '') {
+            alert('Digite um CNPJ válido para consulta');
+            return;
+        }
+        // Remove pontuação
+        cnpj = cnpj.replace(/\D/g, '');
+        if (cnpj.length !== 14) {
+            alert('CNPJ deve ter 14 números. Use apenas números ou formatação.');
+            return;
+        }
+        const url = `https://solucoes.receita.fazenda.gov.br/Servicos/cnpjreva/cnpjreva_solicitacao.asp?cnpj=${cnpj}`;
+        window.open(url, '_blank');
+    }
+
+    // Atualizar salvamento sempre que houver mudança nos inputs (event delegation)
+    function delegarEventos() {
+        // Ao clicar ou digitar nos inputs numéricos e datas, chamar salvarLocal
+        document.body.addEventListener('change', function(e) {
+            if (e.target && (e.target.getAttribute('data-field') === 'valor' || e.target.getAttribute('data-field') === 'data')) {
+                salvarLocal();
+            }
+        });
+        // Também input em tempo real para valores numéricos (opcional)
+        document.body.addEventListener('input', function(e) {
+            if (e.target && e.target.getAttribute('data-field') === 'valor') {
+                // salvar ao digitar? Melhor só ao change mas para garantir robustez
+                // usaremos debounce leve? não necessário, salvarLocal é rápido.
+                salvarLocal();
+            }
+        });
+    }
+
+    // Inicialização
+    function init() {
+        carregarLocal();
+        delegarEventos();
+        // Caso não existam dados, manter exemplo? Se lista estiver vazia e não houver dados salvos, adicionar um exemplo?
+        const cardsExistentes = document.querySelectorAll('#listaClientes .card').length;
+        if (cardsExistentes === 0) {
+            // Adicionar card exemplo apenas se não tiver nada (primeira execução)
+            const cardExemplo = document.createElement('div');
+            cardExemplo.classList.add('card');
+            cardExemplo.innerHTML = `
+                <h3>Cliente Exemplo</h3>
+                <p><strong>CNPJ/CPF:</strong></p>
+                <div class="copiavel" onclick="copiarDocumento('00.000.000/0001-00')">00.000.000/0001-00</div>
+                <p><strong>Telefone:</strong> (14) 99999-9999</p>
+                <p class="valor-devendo"><strong>Valor Devido:</strong></p>
+                <input type="number" step="0.01" value="0" style="width:100%;padding:10px;border-radius:10px;border:1px solid #ccc;margin-top:6px;" onchange="atualizarValor(this)" data-field="valor" />
+                <p style="margin-top:10px;"><strong>Última Atualização:</strong></p>
+                <input type="date" value="2026-05-28" style="margin-top:6px;padding:10px;width:100%;border-radius:10px;border:1px solid #ccc;" onchange="salvarLocal()" data-field="data" />
+                <div class="salvo-info">✔ Dados salvos automaticamente celular e desktop</div>
+                <button class="btn-pequeno" onclick="removerCard(this)">🗑️ Remover Cliente</button>
+            `;
+            listaClientes.appendChild(cardExemplo);
+            salvarLocal();
+        }
+    }
+
+    init();
+</script>
+</body>
+</html>
