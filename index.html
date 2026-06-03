@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>APK Cliente PRO - DN | Gestão de Clientes</title>
     <style>
+        /* ================= ESTILOS (CSS) ================= */
         * {
             margin: 0;
             padding: 0;
@@ -67,6 +68,7 @@
 
         .container {
             padding: 15px;
+            padding-bottom: 70px; /* Evita que o rodapé fixo tampe os últimos cards */
             max-width: 1200px;
             margin: auto;
         }
@@ -92,9 +94,45 @@
             font-weight: bold;
         }
 
+        .btn-export {
+            background: #4b5563;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .btn-export:hover {
+            background: #374151;
+        }
+
+        .btn-import {
+            background: #8b5cf6;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .btn-import:hover {
+            background: #7c3aed;
+        }
+
+        .btn-sort {
+            background: #f59e0b;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .btn-sort:hover {
+            background: #d97706;
+        }
+
         .clientes {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
             gap: 15px;
         }
 
@@ -103,11 +141,15 @@
             padding: 18px;
             border-radius: 16px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            transition: transform 0.1s ease;
         }
 
         .card h3 {
             margin-bottom: 10px;
             color: #111827;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
         .card p {
@@ -137,10 +179,33 @@
             background: #e5e7eb;
         }
 
+        .email-link {
+            background: #e0f2fe;
+            padding: 8px 10px;
+            border-radius: 8px;
+            margin: 8px 0;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: bold;
+            color: #0369a1;
+            border: 1px solid #bae6fd;
+            transition: 0.2s;
+            width: 100%;
+            justify-content: center;
+        }
+
+        .email-link:hover {
+            background: #bae6fd;
+        }
+
         .salvo-info {
             margin-top: 8px;
             font-size: 12px;
             color: #10b981;
+            transition: opacity 0.3s ease;
         }
 
         .modal {
@@ -189,6 +254,22 @@
             cursor: pointer;
         }
 
+        .btn-editar-card {
+            background: #f59e0b;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            padding: 6px 12px;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-left: 8px;
+        }
+
+        .btn-editar-card:hover {
+            background: #d97706;
+        }
+
         .btn-pequeno {
             background: #ef4444;
             color: white;
@@ -204,6 +285,33 @@
 
         .btn-pequeno:hover {
             opacity: 0.9;
+        }
+
+        .ordem-info {
+            background: #e5e7eb;
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            display: inline-block;
+            margin-bottom: 12px;
+            color: #1f2937;
+        }
+
+        /* Novo estilo do rodapé */
+        .rodape {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background-color: #4169E1; /* Azul Royal */
+            color: white;
+            text-align: center;
+            padding: 12px;
+            font-weight: bold;
+            z-index: 100;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.2);
+            font-size: 14px;
         }
 
         @media(max-width: 700px){
@@ -232,202 +340,413 @@
 <div class="container">
     <div class="acoes">
         <button class="btn-add" onclick="abrirModal()">+ Adicionar Cliente</button>
+        <button class="btn-export" onclick="exportarCSV()">📥 Exportar</button>
+        
+        <input type="file" id="importArquivo" accept=".csv" style="display: none;" onchange="importarCSV(event)" />
+        <button class="btn-import" onclick="document.getElementById('importArquivo').click()">⬆️ Importar CSV</button>
+        <button class="btn-sort" onclick="aplicarOrdenacaoAZ()">🔤 Ordem A-Z (fixa)</button>
+        
         <input type="text" id="buscaRapida" placeholder="🔎 Buscar cliente por nome, doc ou telefone..." onkeyup="filtrarClientes()" />
     </div>
 
-    <div class="clientes" id="listaClientes">
-        <!-- Exemplo demonstrativo (será substituído ao carregar do localStorage) -->
-        <div class="card">
-            <h3>Cliente Exemplo</h3>
-            <p><strong>CNPJ/CPF:</strong></p>
-            <div class="copiavel" onclick="copiarDocumento('00.000.000/0001-00')">00.000.000/0001-00</div>
-            <p><strong>Telefone:</strong> (14) 99999-9999</p>
-            <p class="valor-devendo"><strong>Valor Devido:</strong></p>
-            <input type="number" step="0.01" value="0" style="width:100%;padding:10px;border-radius:10px;border:1px solid #ccc;margin-top:6px;" onchange="atualizarValor(this)" data-field="valor" />
-            <p style="margin-top:10px;"><strong>Última Atualização:</strong></p>
-            <input type="date" value="2026-05-28" style="margin-top:6px;padding:10px;width:100%;border-radius:10px;border:1px solid #ccc;" onchange="salvarLocal()" data-field="data" />
-            <div class="salvo-info">✔ Dados salvos automaticamente</div>
-            <button class="btn-pequeno" onclick="removerCard(this)">🗑️ Remover Cliente</button>
-        </div>
-    </div>
+    <!-- Indicador visual da ordem atual -->
+    <div class="ordem-info" id="ordemStatus">📌 Ordem atual: A - Z (alfabética)</div>
+
+    <div class="clientes" id="listaClientes"></div>
 </div>
 
-<!-- Modal -->
+<!-- Modal de Cadastro/Edição -->
 <div id="modalCliente" class="modal">
     <div class="modal-content">
-        <h2>📌 Cadastrar Cliente</h2>
+        <h2 id="modalTitulo">📌 Cadastrar Cliente</h2>
         <input type="text" id="nomeCliente" placeholder="Nome do Cliente *" />
-        <input type="text" id="documentoCliente" placeholder="CPF ou CNPJ *" />
-        <input type="text" id="telefoneCliente" placeholder="Telefone *" />
+        <input type="text" id="documentoCliente" placeholder="CPF ou CNPJ *" oninput="mascaraDocumento(this)" maxlength="18" />
+        <input type="text" id="telefoneCliente" placeholder="Telefone *" oninput="mascaraTelefone(this)" maxlength="15" />
+        <input type="email" id="emailCliente" placeholder="E-mail (opcional)" />
         <input type="number" step="0.01" id="valorCliente" placeholder="Valor Devido R$" />
         <input type="date" id="dataCliente" />
         <button class="salvar" onclick="salvarCliente()">✅ Salvar Cliente</button>
+        <input type="hidden" id="editandoId" value="" />
     </div>
 </div>
 
+<footer class="rodape">
+    desenvolvedor Daniel Negrini 📱 (14) 99692 2983
+</footer>
+
 <script>
+    // ================= LÓGICA E DADOS (JAVASCRIPT) =================
     const modal = document.getElementById('modalCliente');
     const listaClientes = document.getElementById('listaClientes');
+    
+    // Banco de dados local na memória
+    let clientes = [];
 
-    function abrirModal() {
+    // Flag para manter ordem A-Z sempre ativa
+    let ordemAZAtiva = true;
+
+    // Carregar do LocalStorage
+    function carregarLocal() {
+        const dadosRaw = localStorage.getItem('clientesDN_PRO_v3'); 
+        
+        if (dadosRaw) {
+            clientes = JSON.parse(dadosRaw);
+        } else {
+            // Cliente exemplo com email incluso
+            clientes = [
+                {
+                    id: Date.now(),
+                    nome: "Cliente Exemplo",
+                    documento: "00.000.000/0001-00",
+                    telefone: "(14) 99999-9999",
+                    email: "contato@exemplo.com.br",
+                    valor: 0.00,
+                    data: "2026-05-28"
+                }
+            ];
+            sincronizarLocal();
+        }
+        // Garantir que todos os clientes tenham campo email (backward compatibility)
+        let modificado = false;
+        clientes.forEach(c => {
+            if (!c.hasOwnProperty('email')) {
+                c.email = '';
+                modificado = true;
+            }
+        });
+        if (modificado) sincronizarLocal();
+        
+        renderizarClientes();
+    }
+
+    // Salvar no LocalStorage
+    function sincronizarLocal() {
+        localStorage.setItem('clientesDN_PRO_v3', JSON.stringify(clientes));
+    }
+
+    // Aplicar ordenação A-Z sempre e renderizar respeitando filtro
+    function renderizarClientes() {
+        listaClientes.innerHTML = '';
+        const filtro = document.getElementById('buscaRapida').value.toLowerCase();
+
+        // Criar cópia para ordenar sem alterar array original? Vamos ordenar o array sempre para manter consistência
+        if (ordemAZAtiva) {
+            clientes.sort((a, b) => a.nome.localeCompare(b.nome));
+        } else {
+            // Se futuramente quiser outra ordem, mas por padrão é A-Z
+            clientes.sort((a, b) => a.nome.localeCompare(b.nome));
+        }
+        
+        // Filtragem
+        const clientesFiltrados = clientes.filter(cli => {
+            const textoCard = `${cli.nome} ${cli.documento} ${cli.telefone} ${cli.email || ''}`.toLowerCase();
+            return textoCard.includes(filtro);
+        });
+
+        clientesFiltrados.forEach(cli => {
+            const card = document.createElement('div');
+            card.classList.add('card');
+            
+            // Tratamento de email
+            const emailDisplay = cli.email && cli.email.trim() !== '' ? 
+                `<div class="email-link" onclick="abrirOutlook('${escapeHTML(cli.email)}')">📧 ${escapeHTML(cli.email)} (Clique para enviar e-mail)</div>` : 
+                `<div class="email-link" style="background:#f3f4f6; color:#6b7280; cursor:default;" onclick="event.stopPropagation()">📧 Nenhum e-mail cadastrado</div>`;
+            
+            card.innerHTML = `
+                <h3>${escapeHTML(cli.nome)} 
+                    <button class="btn-editar-card" onclick="abrirEdicaoCliente(${cli.id})">✏️ Editar</button>
+                </h3>
+                <p><strong>CNPJ/CPF:</strong></p>
+                <div class="copiavel" onclick="copiarDocumento('${escapeHTML(cli.documento)}')">${escapeHTML(cli.documento)}</div>
+                <p><strong>Telefone:</strong> ${escapeHTML(cli.telefone)}</p>
+                ${emailDisplay}
+                <p class="valor-devendo"><strong>Valor Devido:</strong></p>
+                <input type="number" step="0.01" value="${parseFloat(cli.valor).toFixed(2)}" style="width:100%;padding:10px;border-radius:10px;border:1px solid #ccc;margin-top:6px;" onchange="atualizarCampo(${cli.id}, 'valor', this.value)" />
+                
+                <p style="margin-top:10px;"><strong>Última Atualização:</strong></p>
+                <input type="date" value="${cli.data}" style="margin-top:6px;padding:10px;width:100%;border-radius:10px;border:1px solid #ccc;" onchange="atualizarCampo(${cli.id}, 'data', this.value)" />
+                
+                <div class="salvo-info info-${cli.id}">✔ Dados salvos automaticamente</div>
+                <button class="btn-pequeno" onclick="removerCliente(${cli.id})">🗑️ Remover Cliente</button>
+            `;
+            
+            listaClientes.appendChild(card);
+        });
+        
+        // Atualizar indicador visual de ordem
+        document.getElementById('ordemStatus').innerHTML = '📌 Ordem atual: A - Z (alfabética) | Clientes ordenados por nome';
+    }
+
+    // Função para abrir modal de edição com dados preenchidos
+    function abrirEdicaoCliente(id) {
+        const cliente = clientes.find(c => c.id === id);
+        if (!cliente) return;
+        
+        document.getElementById('modalTitulo').innerHTML = '✏️ Editar Cliente';
+        document.getElementById('nomeCliente').value = cliente.nome;
+        document.getElementById('documentoCliente').value = cliente.documento;
+        document.getElementById('telefoneCliente').value = cliente.telefone;
+        document.getElementById('emailCliente').value = cliente.email || '';
+        document.getElementById('valorCliente').value = cliente.valor;
+        document.getElementById('dataCliente').value = cliente.data;
+        document.getElementById('editandoId').value = cliente.id;
+        
         modal.style.display = 'flex';
     }
 
-    window.onclick = function(e) {
-        if (e.target === modal) {
-            modal.style.display = 'none';
-        }
+    // Abrir modal padrão (novo cadastro)
+    function abrirModal() {
+        document.getElementById('modalTitulo').innerHTML = '📌 Cadastrar Cliente';
+        document.getElementById('nomeCliente').value = '';
+        document.getElementById('documentoCliente').value = '';
+        document.getElementById('telefoneCliente').value = '';
+        document.getElementById('emailCliente').value = '';
+        document.getElementById('valorCliente').value = '';
+        document.getElementById('dataCliente').value = '';
+        document.getElementById('editandoId').value = '';
+        modal.style.display = 'flex';
     }
 
-    // Função principal para salvar novo cliente
+    // Salvar ou Atualizar Cliente (unificado)
     function salvarCliente() {
         const nome = document.getElementById('nomeCliente').value.trim();
         const documento = document.getElementById('documentoCliente').value.trim();
         const telefone = document.getElementById('telefoneCliente').value.trim();
-        let valor = document.getElementById('valorCliente').value;
-        let data = document.getElementById('dataCliente').value;
+        const email = document.getElementById('emailCliente').value.trim();
+        let valor = document.getElementById('valorCliente').value || '0';
+        let data = document.getElementById('dataCliente').value || new Date().toISOString().slice(0,10);
+        const editandoId = document.getElementById('editandoId').value;
 
-        if (nome === '' || documento === '' || telefone === '') {
+        if (!nome || !documento || !telefone) {
             alert('❌ Preencha todos os campos obrigatórios: Nome, Documento e Telefone');
             return;
         }
 
-        if (valor === '') valor = '0';
-        const dataAtual = new Date().toISOString().slice(0,10);
-        if (data === '') data = dataAtual;
+        if (editandoId) {
+            // Atualizar cliente existente
+            const index = clientes.findIndex(c => c.id == editandoId);
+            if (index !== -1) {
+                clientes[index] = {
+                    ...clientes[index],
+                    nome,
+                    documento,
+                    telefone,
+                    email: email || '',
+                    valor: parseFloat(valor),
+                    data
+                };
+                sincronizarLocal();
+                renderizarClientes();
+                alert('✅ Cliente atualizado com sucesso!');
+            } else {
+                alert('Erro: cliente não encontrado.');
+            }
+        } else {
+            // Criar novo cliente
+            const novoCliente = {
+                id: Date.now(),
+                nome,
+                documento,
+                telefone,
+                email: email || '',
+                valor: parseFloat(valor),
+                data
+            };
+            clientes.push(novoCliente);
+            sincronizarLocal();
+            renderizarClientes();
+            alert('✅ Cliente cadastrado com sucesso!');
+        }
 
-        const card = document.createElement('div');
-        card.classList.add('card');
-        // Montagem com campos editáveis e botão remover
-        card.innerHTML = `
-            <h3>${escapeHTML(nome)}</h3>
-            <p><strong>CNPJ/CPF:</strong></p>
-            <div class="copiavel" onclick="copiarDocumento('${escapeHTML(documento)}')">${escapeHTML(documento)}</div>
-            <p><strong>Telefone:</strong> ${escapeHTML(telefone)}</p>
-            <p class="valor-devendo"><strong>Valor Devido:</strong></p>
-            <input type="number" step="0.01" value="${parseFloat(valor).toFixed(2)}" style="width:100%;padding:10px;border-radius:10px;border:1px solid #ccc;margin-top:6px;" onchange="atualizarValor(this)" data-field="valor" />
-            <p style="margin-top:10px;"><strong>Última Atualização:</strong></p>
-            <input type="date" value="${data}" style="margin-top:6px;padding:10px;width:100%;border-radius:10px;border:1px solid #ccc;" onchange="salvarLocal()" data-field="data" />
-            <div class="salvo-info">✔ Dados salvos automaticamente celular e desktop</div>
-            <button class="btn-pequeno" onclick="removerCard(this)">🗑️ Remover Cliente</button>
-        `;
-
-        listaClientes.appendChild(card);
-        salvarLocal();
-        // Limpar campos
+        // Limpar e fechar modal
         document.getElementById('nomeCliente').value = '';
         document.getElementById('documentoCliente').value = '';
         document.getElementById('telefoneCliente').value = '';
+        document.getElementById('emailCliente').value = '';
         document.getElementById('valorCliente').value = '';
         document.getElementById('dataCliente').value = '';
+        document.getElementById('editandoId').value = '';
         modal.style.display = 'none';
-        alert('✅ Cliente cadastrado com sucesso!');
     }
 
-    // Função para atualizar valor e disparar salvamento
-    function atualizarValor(input) {
-        salvarLocal();
-    }
-
-    // Remover cliente
-    function removerCard(botao) {
-        if (confirm('Remover este cliente permanentemente?')) {
-            const card = botao.closest('.card');
-            card.remove();
-            salvarLocal();
+    // Atualizar Dados no Card (valor e data dinâmicos)
+    function atualizarCampo(id, campo, novoValor) {
+        const index = clientes.findIndex(c => c.id === id);
+        if (index !== -1) {
+            if (campo === 'valor') {
+                clientes[index][campo] = parseFloat(novoValor);
+            } else if (campo === 'data') {
+                clientes[index][campo] = novoValor;
+            } else {
+                clientes[index][campo] = novoValor;
+            }
+            sincronizarLocal();
+            
+            const info = document.querySelector(`.info-${id}`);
+            if (info) {
+                info.style.opacity = '0.3';
+                setTimeout(() => info.style.opacity = '1', 300);
+            }
+            // Re-renderiza para manter ordem A-Z e atualizar interface
+            renderizarClientes();
         }
     }
 
-    // Filtro busca rápida
-    function filtrarClientes() {
-        const filtro = document.getElementById('buscaRapida').value.toLowerCase();
-        const cards = document.querySelectorAll('#listaClientes .card');
-        cards.forEach(card => {
-            const texto = card.innerText.toLowerCase();
-            card.style.display = texto.includes(filtro) ? 'block' : 'none';
-        });
+    // Remover Cliente
+    function removerCliente(id) {
+        if (confirm('Remover este cliente permanentemente?')) {
+            clientes = clientes.filter(c => c.id !== id);
+            sincronizarLocal();
+            renderizarClientes();
+        }
     }
 
-    // Copiar documento
+    // Busca Rápida (mantém ordenação)
+    function filtrarClientes() {
+        renderizarClientes();
+    }
+
+    // Aplicar Ordenação A-Z explicitamente (e manter flag)
+    function aplicarOrdenacaoAZ() {
+        ordemAZAtiva = true;
+        renderizarClientes();
+        alert('✅ Lista ordenada em ordem alfabética A-Z por nome do cliente.');
+    }
+
+    // Exportar para Excel (CSV) incluindo campo email
+    function exportarCSV() {
+        if (clientes.length === 0) {
+            alert("❌ Não há clientes cadastrados para exportar.");
+            return;
+        }
+
+        let csv = "\ufeff"; 
+        csv += "Nome;CPF/CNPJ;Telefone;E-mail;Valor Devido (R$);Última Atualização\n";
+        
+        // Ordenar para exportar também organizado
+        const clientesOrdenados = [...clientes].sort((a,b) => a.nome.localeCompare(b.nome));
+        clientesOrdenados.forEach(c => {
+            const nomeTratado = c.nome.replace(/"/g, '""');
+            const valorTratado = parseFloat(c.valor).toFixed(2).replace('.', ',');
+            const emailTratado = c.email ? c.email.replace(/"/g, '""') : '';
+            csv += `"${nomeTratado}";"${c.documento}";"${c.telefone}";"${emailTratado}";"${valorTratado}";"${c.data}"\n`;
+        });
+        
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        
+        const dataAtual = new Date().toISOString().slice(0,10);
+        link.setAttribute("href", url);
+        link.setAttribute("download", `gestao_clientes_dn_pro_${dataAtual}.csv`);
+        link.style.visibility = 'hidden';
+        
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    // IMPORTAR ARQUIVO CSV (compatível com novo formato de email)
+    function importarCSV(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const text = e.target.result;
+            const linhas = text.split('\n');
+            let importados = 0;
+            // Cabeçalho esperado: Nome;CPF/CNPJ;Telefone;E-mail;Valor Devido (R$);Última Atualização
+            for (let i = 1; i < linhas.length; i++) {
+                const linha = linhas[i].trim();
+                if (!linha) continue;
+
+                const valores = linha.split(';');
+                if (valores.length >= 5) {
+                    const nome = valores[0].replace(/^"|"$/g, '').replace(/""/g, '"');
+                    const doc = valores[1].replace(/^"|"$/g, '');
+                    const tel = valores[2].replace(/^"|"$/g, '');
+                    let email = '';
+                    let valorStr = '0';
+                    let data = '';
+                    
+                    if (valores.length >= 6) {
+                        email = valores[3].replace(/^"|"$/g, '');
+                        valorStr = valores[4].replace(/^"|"$/g, '').replace(',', '.');
+                        data = valores[5].replace(/^"|"$/g, '');
+                    } else {
+                        // fallback para versão antiga sem email
+                        valorStr = valores[3].replace(/^"|"$/g, '').replace(',', '.');
+                        data = valores[4] ? valores[4].replace(/^"|"$/g, '') : new Date().toISOString().slice(0,10);
+                    }
+                    
+                    clientes.push({
+                        id: Date.now() + Math.random(),
+                        nome: nome,
+                        documento: doc,
+                        telefone: tel,
+                        email: email || '',
+                        valor: parseFloat(valorStr) || 0,
+                        data: data || new Date().toISOString().slice(0,10)
+                    });
+                    importados++;
+                }
+            }
+
+            if (importados > 0) {
+                sincronizarLocal();
+                renderizarClientes();
+                alert(`✅ ${importados} clientes importados com sucesso!`);
+            } else {
+                alert('⚠️ Nenhum cliente válido encontrado. Verifique o formato (CSV separado por ponto e vírgula).');
+            }
+            event.target.value = '';
+        };
+        reader.readAsText(file, 'utf-8'); 
+    }
+
+    // Função para abrir Outlook (mailto)
+    function abrirOutlook(email) {
+        if (!email || email === '') {
+            alert('Nenhum e-mail cadastrado para este cliente.');
+            return;
+        }
+        // Cria link mailto padrão que abre cliente de e-mail padrão do sistema (Outlook, Thunderbird, etc)
+        window.location.href = `mailto:${encodeURIComponent(email)}?subject=Assunto&body=Olá, entramos em contato...`;
+    }
+
+    // Máscaras
+    function mascaraDocumento(input) {
+        let v = input.value.replace(/\D/g, ""); 
+        if (v.length <= 11) {
+            v = v.replace(/(\d{3})(\d)/, "$1.$2");
+            v = v.replace(/(\d{3})(\d)/, "$1.$2");
+            v = v.replace(/(\d{3})(\d{1,2})$/, "$1-$2");
+        } else {
+            v = v.substring(0, 14);
+            v = v.replace(/^(\d{2})(\d)/, "$1.$2");
+            v = v.replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3");
+            v = v.replace(/\.(\d{3})(\d)/, ".$1/$2");
+            v = v.replace(/(\d{4})(\d{1,2})$/, "$1-$2");
+        }
+        input.value = v;
+    }
+
+    function mascaraTelefone(input) {
+        let v = input.value.replace(/\D/g, "");
+        v = v.replace(/^(\d{2})(\d)/g, "($1) $2");
+        v = v.replace(/(\d)(\d{4})$/, "$1-$2"); 
+        input.value = v;
+    }
+
     function copiarDocumento(doc) {
         navigator.clipboard.writeText(doc).then(() => {
-            alert('📋 Documento copiado: ' + doc);
+            alert('📋 Documento copiado com sucesso: ' + doc);
         }).catch(() => {
-            alert('⚠️ Não foi possível copiar');
+            alert('⚠️ Falha ao copiar automaticamente.');
         });
     }
 
-    // Salvar todos os dados no localStorage (preserva valores dos inputs)
-    function salvarLocal() {
-        const cards = document.querySelectorAll('#listaClientes .card');
-        const dadosParaSalvar = [];
-
-        cards.forEach(card => {
-            // Extrair nome, documento, telefone, valor devido, data
-            const nome = card.querySelector('h3')?.innerText || '';
-            const documentoDiv = card.querySelector('.copiavel');
-            const documento = documentoDiv ? documentoDiv.innerText : '';
-            const telefoneStrong = card.querySelector('p:nth-of-type(3)'); // seletor relativo
-            let telefone = '';
-            // Melhor buscar: o texto após "Telefone:"
-            const telefoneTexto = card.innerText.match(/Telefone:\s*(.+?)(?:\n|Valor|$)/);
-            if (telefoneTexto) telefone = telefoneTexto[1].trim();
-            else telefone = '';
-
-            const valorInput = card.querySelector('input[data-field="valor"]');
-            const valor = valorInput ? valorInput.value : '0';
-            const dataInput = card.querySelector('input[data-field="data"]');
-            const data = dataInput ? dataInput.value : '';
-
-            dadosParaSalvar.push({
-                nome: nome,
-                documento: documento,
-                telefone: telefone,
-                valor: valor,
-                data: data
-            });
-        });
-
-        localStorage.setItem('clientesDN_PRO', JSON.stringify(dadosParaSalvar));
-        // Pequeno feedback visual (opcional)
-        const infos = document.querySelectorAll('.salvo-info');
-        infos.forEach(info => {
-            info.style.opacity = '0.7';
-            setTimeout(() => { info.style.opacity = '1'; }, 200);
-        });
-    }
-
-    // Carregar dados do localStorage
-    function carregarLocal() {
-        const dadosRaw = localStorage.getItem('clientesDN_PRO');
-        if (!dadosRaw) return;
-
-        const clientes = JSON.parse(dadosRaw);
-        if (!clientes.length) return;
-
-        // Limpa lista atual mantendo apenas se não houver dados? Vamos substituir completamente
-        listaClientes.innerHTML = '';
-
-        clientes.forEach(cli => {
-            const card = document.createElement('div');
-            card.classList.add('card');
-            card.innerHTML = `
-                <h3>${escapeHTML(cli.nome)}</h3>
-                <p><strong>CNPJ/CPF:</strong></p>
-                <div class="copiavel" onclick="copiarDocumento('${escapeHTML(cli.documento)}')">${escapeHTML(cli.documento)}</div>
-                <p><strong>Telefone:</strong> ${escapeHTML(cli.telefone)}</p>
-                <p class="valor-devendo"><strong>Valor Devido:</strong></p>
-                <input type="number" step="0.01" value="${parseFloat(cli.valor).toFixed(2)}" style="width:100%;padding:10px;border-radius:10px;border:1px solid #ccc;margin-top:6px;" onchange="atualizarValor(this)" data-field="valor" />
-                <p style="margin-top:10px;"><strong>Última Atualização:</strong></p>
-                <input type="date" value="${cli.data}" style="margin-top:6px;padding:10px;width:100%;border-radius:10px;border:1px solid #ccc;" onchange="salvarLocal()" data-field="data" />
-                <div class="salvo-info">✔ Dados salvos automaticamente celular e desktop</div>
-                <button class="btn-pequeno" onclick="removerCard(this)">🗑️ Remover Cliente</button>
-            `;
-            listaClientes.appendChild(card);
-        });
-    }
-
-    // Função para escapar HTML básico (evitar XSS leve)
     function escapeHTML(str) {
         if (!str) return '';
         return str.replace(/[&<>]/g, function(m) {
@@ -435,74 +754,33 @@
             if (m === '<') return '&lt;';
             if (m === '>') return '&gt;';
             return m;
-        }).replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, function(c) {
-            return c;
         });
     }
 
-    // Função buscar CNPJ - abre site da Receita
     function buscarCNPJ() {
         let cnpj = document.getElementById('cnpjBusca').value.trim();
         if (cnpj === '') {
             alert('Digite um CNPJ válido para consulta');
             return;
         }
-        // Remove pontuação
         cnpj = cnpj.replace(/\D/g, '');
         if (cnpj.length !== 14) {
-            alert('CNPJ deve ter 14 números. Use apenas números ou formatação.');
+            alert('O CNPJ para busca deve conter exatamente 14 números.');
             return;
         }
         const url = `https://solucoes.receita.fazenda.gov.br/Servicos/cnpjreva/cnpjreva_solicitacao.asp?cnpj=${cnpj}`;
         window.open(url, '_blank');
     }
 
-    // Atualizar salvamento sempre que houver mudança nos inputs (event delegation)
-    function delegarEventos() {
-        // Ao clicar ou digitar nos inputs numéricos e datas, chamar salvarLocal
-        document.body.addEventListener('change', function(e) {
-            if (e.target && (e.target.getAttribute('data-field') === 'valor' || e.target.getAttribute('data-field') === 'data')) {
-                salvarLocal();
-            }
-        });
-        // Também input em tempo real para valores numéricos (opcional)
-        document.body.addEventListener('input', function(e) {
-            if (e.target && e.target.getAttribute('data-field') === 'valor') {
-                // salvar ao digitar? Melhor só ao change mas para garantir robustez
-                // usaremos debounce leve? não necessário, salvarLocal é rápido.
-                salvarLocal();
-            }
-        });
-    }
-
-    // Inicialização
-    function init() {
-        carregarLocal();
-        delegarEventos();
-        // Caso não existam dados, manter exemplo? Se lista estiver vazia e não houver dados salvos, adicionar um exemplo?
-        const cardsExistentes = document.querySelectorAll('#listaClientes .card').length;
-        if (cardsExistentes === 0) {
-            // Adicionar card exemplo apenas se não tiver nada (primeira execução)
-            const cardExemplo = document.createElement('div');
-            cardExemplo.classList.add('card');
-            cardExemplo.innerHTML = `
-                <h3>Cliente Exemplo</h3>
-                <p><strong>CNPJ/CPF:</strong></p>
-                <div class="copiavel" onclick="copiarDocumento('00.000.000/0001-00')">00.000.000/0001-00</div>
-                <p><strong>Telefone:</strong> (14) 99999-9999</p>
-                <p class="valor-devendo"><strong>Valor Devido:</strong></p>
-                <input type="number" step="0.01" value="0" style="width:100%;padding:10px;border-radius:10px;border:1px solid #ccc;margin-top:6px;" onchange="atualizarValor(this)" data-field="valor" />
-                <p style="margin-top:10px;"><strong>Última Atualização:</strong></p>
-                <input type="date" value="2026-05-28" style="margin-top:6px;padding:10px;width:100%;border-radius:10px;border:1px solid #ccc;" onchange="salvarLocal()" data-field="data" />
-                <div class="salvo-info">✔ Dados salvos automaticamente celular e desktop</div>
-                <button class="btn-pequeno" onclick="removerCard(this)">🗑️ Remover Cliente</button>
-            `;
-            listaClientes.appendChild(cardExemplo);
-            salvarLocal();
+    // Fechar modal ao clicar fora
+    window.onclick = function(e) {
+        if (e.target === modal) {
+            modal.style.display = 'none';
         }
     }
 
-    init();
+    // Inicializar o App
+    carregarLocal();
 </script>
 </body>
 </html>
