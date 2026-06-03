@@ -78,6 +78,7 @@
             gap: 10px;
             margin-bottom: 20px;
             flex-wrap: wrap;
+            align-items: center;
         }
 
         .acoes button, .acoes input {
@@ -128,6 +129,71 @@
 
         .btn-sort:hover {
             background: #d97706;
+        }
+
+        /* Container de busca com guia integrada */
+        .busca-container {
+            flex: 2;
+            min-width: 220px;
+            position: relative;
+        }
+
+        .busca-container input {
+            width: 100%;
+            padding: 12px 35px 12px 12px;
+            border-radius: 10px;
+            border: 1px solid #ccc;
+            transition: all 0.2s;
+        }
+
+        .busca-container input:focus {
+            border-color: #2563eb;
+            box-shadow: 0 0 0 2px rgba(37,99,235,0.2);
+            outline: none;
+        }
+
+        /* Guia flutuante (tooltip dinâmica ao clicar) */
+        .guia-busca-flutuante {
+            position: absolute;
+            top: calc(100% + 5px);
+            left: 0;
+            right: 0;
+            background: #1f2937;
+            color: white;
+            border-radius: 12px;
+            padding: 10px 14px;
+            font-size: 13px;
+            z-index: 50;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            backdrop-filter: blur(4px);
+            background: rgba(31, 41, 55, 0.95);
+            border-left: 4px solid #fbbf24;
+            transition: all 0.2s ease;
+            pointer-events: none;
+            animation: fadeSlide 0.2s ease-out;
+        }
+
+        .guia-busca-flutuante span {
+            font-weight: bold;
+            color: #fbbf24;
+        }
+
+        .guia-busca-flutuante small {
+            display: block;
+            margin-top: 6px;
+            opacity: 0.8;
+            font-size: 11px;
+        }
+
+        @keyframes fadeSlide {
+            from {
+                opacity: 0;
+                transform: translateY(-6px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         .clientes {
@@ -322,6 +388,10 @@
             .logo {
                 text-align: center;
             }
+            .guia-busca-flutuante {
+                font-size: 11px;
+                padding: 8px 12px;
+            }
         }
     </style>
 </head>
@@ -346,7 +416,15 @@
         <button class="btn-import" onclick="document.getElementById('importArquivo').click()">⬆️ Importar CSV</button>
         <button class="btn-sort" onclick="aplicarOrdenacaoAZ()">🔤 Ordem A-Z (fixa)</button>
         
-        <input type="text" id="buscaRapida" placeholder="🔎 Buscar cliente por nome, doc ou telefone..." onkeyup="filtrarClientes()" />
+        <!-- Campo de busca com guia aprimorada -->
+        <div class="busca-container" id="buscaContainer">
+            <input type="text" id="buscaRapida" placeholder="🔎 Buscar por nome, documento ou telefone..." autocomplete="off" />
+            <!-- Guia flutuante que aparece ao clicar no campo -->
+            <div id="guiaBusca" class="guia-busca-flutuante" style="display: none;">
+                💡 <span>Dica de busca rápida:</span> Pesquise por <strong>nome</strong>, <strong>CPF/CNPJ</strong> ou <strong>telefone</strong>. <br>
+                <small>🔍 A busca é automática conforme você digita.</small>
+            </div>
+        </div>
     </div>
 
     <!-- Indicador visual da ordem atual -->
@@ -378,12 +456,67 @@
     // ================= LÓGICA E DADOS (JAVASCRIPT) =================
     const modal = document.getElementById('modalCliente');
     const listaClientes = document.getElementById('listaClientes');
+    const buscaInput = document.getElementById('buscaRapida');
+    const guiaBusca = document.getElementById('guiaBusca');
     
     // Banco de dados local na memória
     let clientes = [];
 
     // Flag para manter ordem A-Z sempre ativa
     let ordemAZAtiva = true;
+
+    // --- Melhoria: GUIA INTERATIVA para o campo de busca ---
+    // Ao clicar no campo de busca, exibe a guia com dicas
+    function mostrarGuiaBusca() {
+        guiaBusca.style.display = 'block';
+        // Ocultar automaticamente após 4 segundos se o usuário não interagir?
+        // Mas manter enquanto estiver com foco? Vamos ocultar ao perder foco ou após 5s, mas ao digitar também pode sumir?
+        // O melhor: esconder ao perder foco OU quando começar a digitar, garantindo UX limpo.
+        // Definir timeout para remover automaticamente após 5 segundos caso não perca foco.
+        if (window.guiaTimeout) clearTimeout(window.guiaTimeout);
+        window.guiaTimeout = setTimeout(() => {
+            if (guiaBusca.style.display === 'block') {
+                guiaBusca.style.display = 'none';
+            }
+        }, 5000);
+    }
+
+    // Ao focar no campo, mostra guia (já indica direto)
+    buscaInput.addEventListener('focus', () => {
+        mostrarGuiaBusca();
+    });
+
+    // Ao começar a digitar, remove a guia para não atrapalhar (experiência limpa)
+    buscaInput.addEventListener('input', () => {
+        if (guiaBusca.style.display === 'block') {
+            guiaBusca.style.display = 'none';
+            if (window.guiaTimeout) clearTimeout(window.guiaTimeout);
+        }
+        // A busca é executada normalmente pelo evento onkeyup (filtrarClientes)
+        // Já existe a chamada filtrarClientes pelo atributo onkeyup no HTML? Removemos o onkeyup direto e usamos addEventListener pra evitar duplicidade.
+        filtrarClientes();
+    });
+
+    // Ao perder o foco, oculta guia
+    buscaInput.addEventListener('blur', () => {
+        // Pequeno delay para não conflitar com clique em outros elementos
+        setTimeout(() => {
+            if (guiaBusca.style.display === 'block') {
+                guiaBusca.style.display = 'none';
+            }
+            if (window.guiaTimeout) clearTimeout(window.guiaTimeout);
+        }, 200);
+    });
+
+    // Opcional: também fechar se clicar fora
+    document.addEventListener('click', (event) => {
+        if (!buscaContainer.contains(event.target)) {
+            guiaBusca.style.display = 'none';
+            if (window.guiaTimeout) clearTimeout(window.guiaTimeout);
+        }
+    });
+    
+    const buscaContainer = document.getElementById('buscaContainer');
 
     // Carregar do LocalStorage
     function carregarLocal() {
@@ -396,12 +529,30 @@
             clientes = [
                 {
                     id: Date.now(),
-                    nome: "Cliente Exemplo",
+                    nome: "Cliente Exemplo LTDA",
                     documento: "00.000.000/0001-00",
                     telefone: "(14) 99999-9999",
                     email: "contato@exemplo.com.br",
-                    valor: 0.00,
+                    valor: 1250.75,
                     data: "2026-05-28"
+                },
+                {
+                    id: Date.now() + 1,
+                    nome: "Maria Silva",
+                    documento: "123.456.789-00",
+                    telefone: "(11) 98765-4321",
+                    email: "maria.silva@email.com",
+                    valor: 350.00,
+                    data: "2026-05-20"
+                },
+                {
+                    id: Date.now() + 2,
+                    nome: "João Pereira",
+                    documento: "987.654.321-99",
+                    telefone: "(14) 98888-7777",
+                    email: "joao.pereira@negocios.com",
+                    valor: 0.00,
+                    data: "2026-05-25"
                 }
             ];
             sincronizarLocal();
@@ -429,15 +580,14 @@
         listaClientes.innerHTML = '';
         const filtro = document.getElementById('buscaRapida').value.toLowerCase();
 
-        // Criar cópia para ordenar sem alterar array original? Vamos ordenar o array sempre para manter consistência
+        // Ordenar sempre por nome A-Z
         if (ordemAZAtiva) {
             clientes.sort((a, b) => a.nome.localeCompare(b.nome));
         } else {
-            // Se futuramente quiser outra ordem, mas por padrão é A-Z
             clientes.sort((a, b) => a.nome.localeCompare(b.nome));
         }
         
-        // Filtragem
+        // Filtragem mais abrangente: Nome, Documento, Telefone, Email
         const clientesFiltrados = clientes.filter(cli => {
             const textoCard = `${cli.nome} ${cli.documento} ${cli.telefone} ${cli.email || ''}`.toLowerCase();
             return textoCard.includes(filtro);
@@ -523,7 +673,6 @@
         }
 
         if (editandoId) {
-            // Atualizar cliente existente
             const index = clientes.findIndex(c => c.id == editandoId);
             if (index !== -1) {
                 clientes[index] = {
@@ -542,7 +691,6 @@
                 alert('Erro: cliente não encontrado.');
             }
         } else {
-            // Criar novo cliente
             const novoCliente = {
                 id: Date.now(),
                 nome,
@@ -558,7 +706,6 @@
             alert('✅ Cliente cadastrado com sucesso!');
         }
 
-        // Limpar e fechar modal
         document.getElementById('nomeCliente').value = '';
         document.getElementById('documentoCliente').value = '';
         document.getElementById('telefoneCliente').value = '';
@@ -587,7 +734,6 @@
                 info.style.opacity = '0.3';
                 setTimeout(() => info.style.opacity = '1', 300);
             }
-            // Re-renderiza para manter ordem A-Z e atualizar interface
             renderizarClientes();
         }
     }
@@ -623,7 +769,6 @@
         let csv = "\ufeff"; 
         csv += "Nome;CPF/CNPJ;Telefone;E-mail;Valor Devido (R$);Última Atualização\n";
         
-        // Ordenar para exportar também organizado
         const clientesOrdenados = [...clientes].sort((a,b) => a.nome.localeCompare(b.nome));
         clientesOrdenados.forEach(c => {
             const nomeTratado = c.nome.replace(/"/g, '""');
@@ -656,7 +801,6 @@
             const text = e.target.result;
             const linhas = text.split('\n');
             let importados = 0;
-            // Cabeçalho esperado: Nome;CPF/CNPJ;Telefone;E-mail;Valor Devido (R$);Última Atualização
             for (let i = 1; i < linhas.length; i++) {
                 const linha = linhas[i].trim();
                 if (!linha) continue;
@@ -675,7 +819,6 @@
                         valorStr = valores[4].replace(/^"|"$/g, '').replace(',', '.');
                         data = valores[5].replace(/^"|"$/g, '');
                     } else {
-                        // fallback para versão antiga sem email
                         valorStr = valores[3].replace(/^"|"$/g, '').replace(',', '.');
                         data = valores[4] ? valores[4].replace(/^"|"$/g, '') : new Date().toISOString().slice(0,10);
                     }
@@ -711,7 +854,6 @@
             alert('Nenhum e-mail cadastrado para este cliente.');
             return;
         }
-        // Cria link mailto padrão que abre cliente de e-mail padrão do sistema (Outlook, Thunderbird, etc)
         window.location.href = `mailto:${encodeURIComponent(email)}?subject=Assunto&body=Olá, entramos em contato...`;
     }
 
