@@ -68,7 +68,7 @@
 
         .container {
             padding: 15px;
-            padding-bottom: 70px; /* Evita que o rodapé fixo tampe os últimos cards */
+            padding-bottom: 70px;
             max-width: 1200px;
             margin: auto;
         }
@@ -131,7 +131,6 @@
             background: #d97706;
         }
 
-        /* Container de busca com guia integrada */
         .busca-container {
             flex: 2;
             min-width: 220px;
@@ -152,7 +151,6 @@
             outline: none;
         }
 
-        /* Guia flutuante (tooltip dinâmica ao clicar) */
         .guia-busca-flutuante {
             position: absolute;
             top: calc(100% + 5px);
@@ -308,6 +306,14 @@
             border: 1px solid #ccc;
         }
 
+        .campo-opcional-label {
+            font-size: 12px;
+            color: #6b7280;
+            margin-top: -8px;
+            margin-bottom: 8px;
+            display: block;
+        }
+
         .salvar {
             width: 100%;
             padding: 14px;
@@ -364,13 +370,12 @@
             color: #1f2937;
         }
 
-        /* Novo estilo do rodapé */
         .rodape {
             position: fixed;
             bottom: 0;
             left: 0;
             width: 100%;
-            background-color: #4169E1; /* Azul Royal */
+            background-color: #4169E1;
             color: white;
             text-align: center;
             padding: 12px;
@@ -416,10 +421,8 @@
         <button class="btn-import" onclick="document.getElementById('importArquivo').click()">⬆️ Importar CSV</button>
         <button class="btn-sort" onclick="aplicarOrdenacaoAZ()">🔤 Ordem A-Z (fixa)</button>
         
-        <!-- Campo de busca com guia aprimorada -->
         <div class="busca-container" id="buscaContainer">
             <input type="text" id="buscaRapida" placeholder="🔎 Buscar por nome, documento ou telefone..." autocomplete="off" />
-            <!-- Guia flutuante que aparece ao clicar no campo -->
             <div id="guiaBusca" class="guia-busca-flutuante" style="display: none;">
                 💡 <span>Dica de busca rápida:</span> Pesquise por <strong>nome</strong>, <strong>CPF/CNPJ</strong> ou <strong>telefone</strong>. <br>
                 <small>🔍 A busca é automática conforme você digita.</small>
@@ -427,7 +430,6 @@
         </div>
     </div>
 
-    <!-- Indicador visual da ordem atual -->
     <div class="ordem-info" id="ordemStatus">📌 Ordem atual: A - Z (alfabética)</div>
 
     <div class="clientes" id="listaClientes"></div>
@@ -439,10 +441,12 @@
         <h2 id="modalTitulo">📌 Cadastrar Cliente</h2>
         <input type="text" id="nomeCliente" placeholder="Nome do Cliente *" />
         <input type="text" id="documentoCliente" placeholder="CPF ou CNPJ *" oninput="mascaraDocumento(this)" maxlength="18" />
-        <input type="text" id="telefoneCliente" placeholder="Telefone *" oninput="mascaraTelefone(this)" maxlength="15" />
+        <input type="text" id="telefoneCliente" placeholder="Telefone (opcional)" oninput="mascaraTelefone(this)" maxlength="15" />
+        <small class="campo-opcional-label">📱 Telefone não é obrigatório</small>
         <input type="email" id="emailCliente" placeholder="E-mail (opcional)" />
         <input type="number" step="0.01" id="valorCliente" placeholder="Valor Devido R$" />
         <input type="date" id="dataCliente" />
+        <small class="campo-opcional-label">📅 Data não é obrigatória (será preenchida automaticamente se vazia)</small>
         <button class="salvar" onclick="salvarCliente()">✅ Salvar Cliente</button>
         <input type="hidden" id="editandoId" value="" />
     </div>
@@ -459,20 +463,11 @@
     const buscaInput = document.getElementById('buscaRapida');
     const guiaBusca = document.getElementById('guiaBusca');
     
-    // Banco de dados local na memória
     let clientes = [];
-
-    // Flag para manter ordem A-Z sempre ativa
     let ordemAZAtiva = true;
 
-    // --- Melhoria: GUIA INTERATIVA para o campo de busca ---
-    // Ao clicar no campo de busca, exibe a guia com dicas
     function mostrarGuiaBusca() {
         guiaBusca.style.display = 'block';
-        // Ocultar automaticamente após 4 segundos se o usuário não interagir?
-        // Mas manter enquanto estiver com foco? Vamos ocultar ao perder foco ou após 5s, mas ao digitar também pode sumir?
-        // O melhor: esconder ao perder foco OU quando começar a digitar, garantindo UX limpo.
-        // Definir timeout para remover automaticamente após 5 segundos caso não perca foco.
         if (window.guiaTimeout) clearTimeout(window.guiaTimeout);
         window.guiaTimeout = setTimeout(() => {
             if (guiaBusca.style.display === 'block') {
@@ -481,25 +476,19 @@
         }, 5000);
     }
 
-    // Ao focar no campo, mostra guia (já indica direto)
     buscaInput.addEventListener('focus', () => {
         mostrarGuiaBusca();
     });
 
-    // Ao começar a digitar, remove a guia para não atrapalhar (experiência limpa)
     buscaInput.addEventListener('input', () => {
         if (guiaBusca.style.display === 'block') {
             guiaBusca.style.display = 'none';
             if (window.guiaTimeout) clearTimeout(window.guiaTimeout);
         }
-        // A busca é executada normalmente pelo evento onkeyup (filtrarClientes)
-        // Já existe a chamada filtrarClientes pelo atributo onkeyup no HTML? Removemos o onkeyup direto e usamos addEventListener pra evitar duplicidade.
         filtrarClientes();
     });
 
-    // Ao perder o foco, oculta guia
     buscaInput.addEventListener('blur', () => {
-        // Pequeno delay para não conflitar com clique em outros elementos
         setTimeout(() => {
             if (guiaBusca.style.display === 'block') {
                 guiaBusca.style.display = 'none';
@@ -508,9 +497,8 @@
         }, 200);
     });
 
-    // Opcional: também fechar se clicar fora
     document.addEventListener('click', (event) => {
-        if (!buscaContainer.contains(event.target)) {
+        if (buscaContainer && !buscaContainer.contains(event.target)) {
             guiaBusca.style.display = 'none';
             if (window.guiaTimeout) clearTimeout(window.guiaTimeout);
         }
@@ -518,14 +506,12 @@
     
     const buscaContainer = document.getElementById('buscaContainer');
 
-    // Carregar do LocalStorage
     function carregarLocal() {
         const dadosRaw = localStorage.getItem('clientesDN_PRO_v3'); 
         
         if (dadosRaw) {
             clientes = JSON.parse(dadosRaw);
         } else {
-            // Cliente exemplo com email incluso
             clientes = [
                 {
                     id: Date.now(),
@@ -549,19 +535,27 @@
                     id: Date.now() + 2,
                     nome: "João Pereira",
                     documento: "987.654.321-99",
-                    telefone: "(14) 98888-7777",
+                    telefone: "",
                     email: "joao.pereira@negocios.com",
                     valor: 0.00,
-                    data: "2026-05-25"
+                    data: ""
                 }
             ];
             sincronizarLocal();
         }
-        // Garantir que todos os clientes tenham campo email (backward compatibility)
+        
         let modificado = false;
         clientes.forEach(c => {
             if (!c.hasOwnProperty('email')) {
                 c.email = '';
+                modificado = true;
+            }
+            if (!c.hasOwnProperty('telefone') || c.telefone === undefined) {
+                c.telefone = '';
+                modificado = true;
+            }
+            if (!c.hasOwnProperty('data') || c.data === undefined) {
+                c.data = '';
                 modificado = true;
             }
         });
@@ -570,26 +564,22 @@
         renderizarClientes();
     }
 
-    // Salvar no LocalStorage
     function sincronizarLocal() {
         localStorage.setItem('clientesDN_PRO_v3', JSON.stringify(clientes));
     }
 
-    // Aplicar ordenação A-Z sempre e renderizar respeitando filtro
     function renderizarClientes() {
         listaClientes.innerHTML = '';
         const filtro = document.getElementById('buscaRapida').value.toLowerCase();
 
-        // Ordenar sempre por nome A-Z
         if (ordemAZAtiva) {
             clientes.sort((a, b) => a.nome.localeCompare(b.nome));
         } else {
             clientes.sort((a, b) => a.nome.localeCompare(b.nome));
         }
         
-        // Filtragem mais abrangente: Nome, Documento, Telefone, Email
         const clientesFiltrados = clientes.filter(cli => {
-            const textoCard = `${cli.nome} ${cli.documento} ${cli.telefone} ${cli.email || ''}`.toLowerCase();
+            const textoCard = `${cli.nome} ${cli.documento} ${cli.telefone || ''} ${cli.email || ''}`.toLowerCase();
             return textoCard.includes(filtro);
         });
 
@@ -597,7 +587,17 @@
             const card = document.createElement('div');
             card.classList.add('card');
             
-            // Tratamento de email
+            const telefoneDisplay = (cli.telefone && cli.telefone.trim() !== '') ? 
+                `<p><strong>Telefone:</strong> ${escapeHTML(cli.telefone)}</p>` : 
+                `<p><strong>Telefone:</strong> <span style="color:#9ca3af;">Não informado</span></p>`;
+            
+            const dataDisplay = (cli.data && cli.data.trim() !== '') ? 
+                `<p style="margin-top:10px;"><strong>Última Atualização:</strong></p>
+                <input type="date" value="${cli.data}" style="margin-top:6px;padding:10px;width:100%;border-radius:10px;border:1px solid #ccc;" onchange="atualizarCampo(${cli.id}, 'data', this.value)" />` : 
+                `<p style="margin-top:10px;"><strong>Última Atualização:</strong></p>
+                <input type="date" value="" placeholder="Não informada" style="margin-top:6px;padding:10px;width:100%;border-radius:10px;border:1px solid #ccc;" onchange="atualizarCampo(${cli.id}, 'data', this.value)" />
+                <small style="color:#9ca3af;">(Data opcional)</small>`;
+            
             const emailDisplay = cli.email && cli.email.trim() !== '' ? 
                 `<div class="email-link" onclick="abrirOutlook('${escapeHTML(cli.email)}')">📧 ${escapeHTML(cli.email)} (Clique para enviar e-mail)</div>` : 
                 `<div class="email-link" style="background:#f3f4f6; color:#6b7280; cursor:default;" onclick="event.stopPropagation()">📧 Nenhum e-mail cadastrado</div>`;
@@ -608,13 +608,12 @@
                 </h3>
                 <p><strong>CNPJ/CPF:</strong></p>
                 <div class="copiavel" onclick="copiarDocumento('${escapeHTML(cli.documento)}')">${escapeHTML(cli.documento)}</div>
-                <p><strong>Telefone:</strong> ${escapeHTML(cli.telefone)}</p>
+                ${telefoneDisplay}
                 ${emailDisplay}
                 <p class="valor-devendo"><strong>Valor Devido:</strong></p>
                 <input type="number" step="0.01" value="${parseFloat(cli.valor).toFixed(2)}" style="width:100%;padding:10px;border-radius:10px;border:1px solid #ccc;margin-top:6px;" onchange="atualizarCampo(${cli.id}, 'valor', this.value)" />
                 
-                <p style="margin-top:10px;"><strong>Última Atualização:</strong></p>
-                <input type="date" value="${cli.data}" style="margin-top:6px;padding:10px;width:100%;border-radius:10px;border:1px solid #ccc;" onchange="atualizarCampo(${cli.id}, 'data', this.value)" />
+                ${dataDisplay}
                 
                 <div class="salvo-info info-${cli.id}">✔ Dados salvos automaticamente</div>
                 <button class="btn-pequeno" onclick="removerCliente(${cli.id})">🗑️ Remover Cliente</button>
@@ -623,11 +622,9 @@
             listaClientes.appendChild(card);
         });
         
-        // Atualizar indicador visual de ordem
         document.getElementById('ordemStatus').innerHTML = '📌 Ordem atual: A - Z (alfabética) | Clientes ordenados por nome';
     }
 
-    // Função para abrir modal de edição com dados preenchidos
     function abrirEdicaoCliente(id) {
         const cliente = clientes.find(c => c.id === id);
         if (!cliente) return;
@@ -635,16 +632,15 @@
         document.getElementById('modalTitulo').innerHTML = '✏️ Editar Cliente';
         document.getElementById('nomeCliente').value = cliente.nome;
         document.getElementById('documentoCliente').value = cliente.documento;
-        document.getElementById('telefoneCliente').value = cliente.telefone;
+        document.getElementById('telefoneCliente').value = cliente.telefone || '';
         document.getElementById('emailCliente').value = cliente.email || '';
         document.getElementById('valorCliente').value = cliente.valor;
-        document.getElementById('dataCliente').value = cliente.data;
+        document.getElementById('dataCliente').value = cliente.data || '';
         document.getElementById('editandoId').value = cliente.id;
         
         modal.style.display = 'flex';
     }
 
-    // Abrir modal padrão (novo cadastro)
     function abrirModal() {
         document.getElementById('modalTitulo').innerHTML = '📌 Cadastrar Cliente';
         document.getElementById('nomeCliente').value = '';
@@ -657,19 +653,26 @@
         modal.style.display = 'flex';
     }
 
-    // Salvar ou Atualizar Cliente (unificado)
     function salvarCliente() {
         const nome = document.getElementById('nomeCliente').value.trim();
         const documento = document.getElementById('documentoCliente').value.trim();
-        const telefone = document.getElementById('telefoneCliente').value.trim();
+        let telefone = document.getElementById('telefoneCliente').value.trim();
         const email = document.getElementById('emailCliente').value.trim();
         let valor = document.getElementById('valorCliente').value || '0';
-        let data = document.getElementById('dataCliente').value || new Date().toISOString().slice(0,10);
+        let data = document.getElementById('dataCliente').value;
         const editandoId = document.getElementById('editandoId').value;
 
-        if (!nome || !documento || !telefone) {
-            alert('❌ Preencha todos os campos obrigatórios: Nome, Documento e Telefone');
+        if (!nome || !documento) {
+            alert('❌ Preencha os campos obrigatórios: Nome e Documento (CPF/CNPJ)');
             return;
+        }
+
+        if (telefone === '') {
+            telefone = '';
+        }
+
+        if (data === '') {
+            data = '';
         }
 
         if (editandoId) {
@@ -679,10 +682,10 @@
                     ...clientes[index],
                     nome,
                     documento,
-                    telefone,
+                    telefone: telefone || '',
                     email: email || '',
                     valor: parseFloat(valor),
-                    data
+                    data: data || ''
                 };
                 sincronizarLocal();
                 renderizarClientes();
@@ -695,10 +698,10 @@
                 id: Date.now(),
                 nome,
                 documento,
-                telefone,
+                telefone: telefone || '',
                 email: email || '',
                 valor: parseFloat(valor),
-                data
+                data: data || ''
             };
             clientes.push(novoCliente);
             sincronizarLocal();
@@ -716,14 +719,13 @@
         modal.style.display = 'none';
     }
 
-    // Atualizar Dados no Card (valor e data dinâmicos)
     function atualizarCampo(id, campo, novoValor) {
         const index = clientes.findIndex(c => c.id === id);
         if (index !== -1) {
             if (campo === 'valor') {
                 clientes[index][campo] = parseFloat(novoValor);
             } else if (campo === 'data') {
-                clientes[index][campo] = novoValor;
+                clientes[index][campo] = novoValor || '';
             } else {
                 clientes[index][campo] = novoValor;
             }
@@ -738,7 +740,6 @@
         }
     }
 
-    // Remover Cliente
     function removerCliente(id) {
         if (confirm('Remover este cliente permanentemente?')) {
             clientes = clientes.filter(c => c.id !== id);
@@ -747,19 +748,16 @@
         }
     }
 
-    // Busca Rápida (mantém ordenação)
     function filtrarClientes() {
         renderizarClientes();
     }
 
-    // Aplicar Ordenação A-Z explicitamente (e manter flag)
     function aplicarOrdenacaoAZ() {
         ordemAZAtiva = true;
         renderizarClientes();
         alert('✅ Lista ordenada em ordem alfabética A-Z por nome do cliente.');
     }
 
-    // Exportar para Excel (CSV) incluindo campo email
     function exportarCSV() {
         if (clientes.length === 0) {
             alert("❌ Não há clientes cadastrados para exportar.");
@@ -774,7 +772,9 @@
             const nomeTratado = c.nome.replace(/"/g, '""');
             const valorTratado = parseFloat(c.valor).toFixed(2).replace('.', ',');
             const emailTratado = c.email ? c.email.replace(/"/g, '""') : '';
-            csv += `"${nomeTratado}";"${c.documento}";"${c.telefone}";"${emailTratado}";"${valorTratado}";"${c.data}"\n`;
+            const telefoneTratado = c.telefone ? c.telefone.replace(/"/g, '""') : '';
+            const dataTratada = c.data || '';
+            csv += `"${nomeTratado}";"${c.documento}";"${telefoneTratado}";"${emailTratado}";"${valorTratado}";"${dataTratada}"\n`;
         });
         
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -791,7 +791,6 @@
         document.body.removeChild(link);
     }
 
-    // IMPORTAR ARQUIVO CSV (compatível com novo formato de email)
     function importarCSV(event) {
         const file = event.target.files[0];
         if (!file) return;
@@ -809,28 +808,29 @@
                 if (valores.length >= 5) {
                     const nome = valores[0].replace(/^"|"$/g, '').replace(/""/g, '"');
                     const doc = valores[1].replace(/^"|"$/g, '');
-                    const tel = valores[2].replace(/^"|"$/g, '');
+                    let telefone = '';
                     let email = '';
                     let valorStr = '0';
                     let data = '';
                     
                     if (valores.length >= 6) {
+                        telefone = valores[2].replace(/^"|"$/g, '');
                         email = valores[3].replace(/^"|"$/g, '');
                         valorStr = valores[4].replace(/^"|"$/g, '').replace(',', '.');
                         data = valores[5].replace(/^"|"$/g, '');
                     } else {
                         valorStr = valores[3].replace(/^"|"$/g, '').replace(',', '.');
-                        data = valores[4] ? valores[4].replace(/^"|"$/g, '') : new Date().toISOString().slice(0,10);
+                        data = valores[4] ? valores[4].replace(/^"|"$/g, '') : '';
                     }
                     
                     clientes.push({
                         id: Date.now() + Math.random(),
                         nome: nome,
                         documento: doc,
-                        telefone: tel,
+                        telefone: telefone || '',
                         email: email || '',
                         valor: parseFloat(valorStr) || 0,
-                        data: data || new Date().toISOString().slice(0,10)
+                        data: data || ''
                     });
                     importados++;
                 }
@@ -848,7 +848,6 @@
         reader.readAsText(file, 'utf-8'); 
     }
 
-    // Função para abrir Outlook (mailto)
     function abrirOutlook(email) {
         if (!email || email === '') {
             alert('Nenhum e-mail cadastrado para este cliente.');
@@ -857,7 +856,6 @@
         window.location.href = `mailto:${encodeURIComponent(email)}?subject=Assunto&body=Olá, entramos em contato...`;
     }
 
-    // Máscaras
     function mascaraDocumento(input) {
         let v = input.value.replace(/\D/g, ""); 
         if (v.length <= 11) {
@@ -876,8 +874,10 @@
 
     function mascaraTelefone(input) {
         let v = input.value.replace(/\D/g, "");
-        v = v.replace(/^(\d{2})(\d)/g, "($1) $2");
-        v = v.replace(/(\d)(\d{4})$/, "$1-$2"); 
+        if (v.length > 0) {
+            v = v.replace(/^(\d{2})(\d)/g, "($1) $2");
+            v = v.replace(/(\d)(\d{4})$/, "$1-$2");
+        }
         input.value = v;
     }
 
@@ -914,14 +914,12 @@
         window.open(url, '_blank');
     }
 
-    // Fechar modal ao clicar fora
     window.onclick = function(e) {
         if (e.target === modal) {
             modal.style.display = 'none';
         }
     }
 
-    // Inicializar o App
     carregarLocal();
 </script>
 </body>
